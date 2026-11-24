@@ -67,7 +67,7 @@ Nas próximas vezes é só dar duplo-clique de novo: abre em segundos.
 > assim mesmo**.
 
 Para baixar o projeto sem Git: botão verde **Code → Download ZIP** no GitHub e
-extraia numa pasta (ex.: `C:ta`).
+extraia numa pasta (ex.: `C:\ata`).
 
 ## Uso
 
