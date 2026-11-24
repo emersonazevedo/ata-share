@@ -92,3 +92,7 @@ Decisões, Riscos, Pontos técnicos, Ações e o transcript. Também é mantido 
 
 Configuração completa e comentada em `config.example.toml`; qualquer valor pode
 ser sobrescrito por variável de ambiente `ATA_*` (ex.: `ATA_OLLAMA_MODEL`).
+
+## Licença
+
+MIT — veja o arquivo `LICENSE`.
