@@ -1,0 +1,71 @@
+# Copie para  config.toml  e ajuste. Tudo tem default sensato; o arquivo é opcional.
+# Variáveis de ambiente com prefixo ATA_ têm prioridade (ex.: ATA_OLLAMA_MODEL).
+
+[server]
+host = "127.0.0.1"
+port = 8756
+open_browser = true
+open_folder_on_done = true   # abre a pasta da reunião no Explorer quando a ata fica pronta
+
+[guardrails]
+max_recording_minutes = 25    # corte automático da gravação; 0 = sem limite
+warn_before_seconds = 60      # avisa (popup + bip) quanto tempo antes; dá para "Continuar gravando"
+beep = true                   # bip no servidor (Windows); toca mesmo com a aba minimizada
+
+[postprocess]
+dedupe_echo = true             # remove fala ME que repete a SYSTEM (eco do alto-falante no microfone); resumo e nota
+echo_window_seconds = 4.0      # janela de tempo para considerar a mesma fala
+echo_min_similarity = 0.6      # 0..1 — similaridade mínima do texto
+echo_min_word_overlap = 0.6    # 0..1 — fração das palavras do ME que também estão no SYSTEM (falas longas)
+echo_min_words = 5             # mínimo de palavras para aplicar a sobreposição
+asr_lag_warn_seconds = 300     # avisa (log + tela) quando a transcrição ao vivo está tantos s atrás do áudio; 0 = não avisa
+
+[paths]
+# Onde ficam banco, WAVs e artefatos por reunião.
+data_dir = "./data"
+# Cache de modelos faster-whisper. Aponte para o cache que já existe para não rebaixar 1,5 GB.
+model_cache_dir = "./models"   # o modelo (~1,5 GB) é baixado aqui na primeira execução
+
+[asr]
+model = "large-v3-turbo"      # nome ou caminho aceito pelo faster-whisper
+device = "cpu"
+compute_type = "int8"
+cpu_threads = 4               # use o nº de núcleos físicos do seu PC; teste valores maiores e compare.
+beam_size = 1                 # turbo é destilado; greedy costuma ser bem mais rápido
+language = "pt"               # default; a tela escolhe por reunião ("pt"/"en"/"auto")
+vad_min_silence_ms = 400
+vad_speech_pad_ms = 200
+drain_timeout_seconds = 1800  # após o Stop: tempo máx. p/ a fila de ASR esvaziar antes de abortar
+
+[segmenter]
+target_seconds = 24.0         # a partir daqui procura um silêncio para cortar
+min_seconds = 8.0             # não corta antes disso
+max_seconds = 30.0            # se não achar silêncio até aqui, corta na marra
+carry_pad_seconds = 0.15      # cauda mantida p/ não perder palavra na emenda (dedup no ASR)
+flush_min_seconds = 0.4       # no Stop: abaixo disso só descarta se for silêncio
+
+[ollama]
+base_url = "http://127.0.0.1:11434"
+model = "llama3.2:3b"
+allow_fallback = true         # se o modelo acima não estiver instalado, usa outro e avisa na UI
+keep_alive = "30m"
+window_minutes = 10.0         # tamanho de cada janela do map-reduce
+temperature = 0.2
+num_ctx_min = 4096
+num_ctx_max = 32768
+request_timeout_seconds = 900
+
+[obsidian]
+# Exportação automática da ata para uma nota no vault Obsidian (Reunioes/).
+# Desligada por padrão — nunca impede o funcionamento normal do ata sem isso.
+enabled = false
+vault_path = "C:/caminho/do/seu/vault"
+meetings_folder = "Reunioes"
+auto_export = true            # exporta sozinho ao final do processamento; false = só manual
+default_status = "Em andamento"
+
+# Dashboard.md — view derivada, gerada por código determinístico (nunca LLM) a
+# partir das notas em Reunioes/. Pode ser apagado e reconstruído a qualquer hora.
+dashboard_enabled = true       # regenera sozinho depois de cada export bem-sucedido
+dashboard_folder = "Dashboard"
+dashboard_filename = "Dashboard.md"
