@@ -43,6 +43,32 @@ assinatura paga.
    - Na 1ª transcrição baixa o modelo de voz (~1,5 GB, só uma vez).
    - O navegador abre em `http://127.0.0.1:8756`.
 
+### O que é o `ata.bat`?
+
+É o arquivo que **liga o programa** — você não precisa digitar comando nenhum.
+
+1. Na **primeira vez**, cria um ambiente Python isolado na pasta (`.venv`) e
+   instala as bibliotecas (alguns minutos, só uma vez).
+2. Cria o `config.toml` a partir do `config.example.toml`, se ainda não existir.
+3. Inicia o servidor e abre o navegador em `http://127.0.0.1:8756`.
+4. Deixa uma **janela preta aberta** enquanto o programa roda. **Fechar essa
+   janela encerra o programa.**
+
+Nas próximas vezes é só dar duplo-clique de novo: abre em segundos.
+
+| Arquivo | Para quê |
+|---|---|
+| `ata.bat` | Ligar o programa (o único que você precisa usar) |
+| `restart.bat` | Reiniciar, se travar ou depois de atualizar o código |
+| `run.bat` / `run.ps1` | Versões alternativas, para quem prefere terminal |
+
+> **Aviso do Windows:** por ser baixado da internet, o Windows pode mostrar
+> "O Windows protegeu seu computador". Clique em **Mais informações → Executar
+> assim mesmo**.
+
+Para baixar o projeto sem Git: botão verde **Code → Download ZIP** no GitHub e
+extraia numa pasta (ex.: `C:ta`).
+
 ## Uso
 
 1. Escolha o idioma (`pt`, `en` ou `auto`) e, se quiser, o microfone/saída.
