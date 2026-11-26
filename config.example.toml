@@ -8,8 +8,8 @@ open_browser = true
 open_folder_on_done = true   # abre a pasta da reunião no Explorer quando a ata fica pronta
 
 [guardrails]
-max_recording_minutes = 25    # corte automático da gravação; 0 = sem limite
-warn_before_seconds = 60      # avisa (popup + bip) quanto tempo antes; dá para "Continuar gravando"
+max_recording_minutes = 25    # a cada 25 min avisa e encerra; "Continuar gravando" renova por mais 25 (e avisa de novo); 0 = sem limite
+warn_before_seconds = 60      # avisa (popup + bip) quanto tempo antes do corte
 beep = true                   # bip no servidor (Windows); toca mesmo com a aba minimizada
 
 [postprocess]

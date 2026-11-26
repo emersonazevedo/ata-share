@@ -48,19 +48,22 @@ def test_warns_then_stops_at_limit(env):  # noqa: F811
     assert pipe.active_id is None   # stop() foi chamado
 
 
-def test_cancel_after_warning_keeps_recording(env):  # noqa: F811
+def test_continue_extends_then_warns_again_and_stops(env):  # noqa: F811
+    """Continuar renova por mais um período; ao fim dele avisa de novo e encerra."""
     cfg, db, hub, pipe = env
     active = _activate(pipe, db)
     pipe._beep = lambda *a, **k: None
-    t = threading.Thread(target=pipe._limit_guard, args=(active, 2, 2))
+    t = threading.Thread(target=pipe._limit_guard, args=(active, 2, 1))
     t.start()
-    time.sleep(0.3)
-    pipe.cancel_auto_stop("live1")
-    t.join(timeout=5)
+    time.sleep(1.3)                       # já passou o 1º aviso
+    pipe.cancel_auto_stop("live1")        # "Continuar gravando"
+    t.join(timeout=10)
+    assert not t.is_alive()
     types = _events(hub, "live1")
-    assert "limit_warning" in types and "limit_cancelled" in types
-    assert "limit_reached" not in types
-    assert pipe.active_id == "live1"   # continua gravando
+    assert types.count("limit_warning") == 2          # avisou de novo após o período extra
+    assert "limit_extended" in types
+    assert types.index("limit_extended") < types.index("limit_reached")
+    assert pipe.active_id is None                     # e encerrou
 
 
 def test_manual_stop_cancels_guard(env):  # noqa: F811

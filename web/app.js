@@ -238,7 +238,7 @@ async function live(id) {
       render();
     } else if (e.type === "warn") toast(e.message);
     else if (e.type === "limit_warning") showLimit(e.deadline);
-    else if (e.type === "limit_cancelled") hideLimit();
+    else if (e.type === "limit_extended") { hideLimit(); toast(`Gravação estendida por mais ${e.minutes} min. Vou avisar de novo ao fim.`); }
     else if (e.type === "limit_reached") { hideLimit(); toast(`Limite de ${e.minutes} min atingido — encerrando a gravação.`); }
     else if (e.type === "transcript_ready") {
       // transcrição já disponível — vai pro detalhe; a ata segue em 2º plano

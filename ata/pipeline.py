@@ -44,7 +44,13 @@ class _Active:
     started_at: float
     title: str
     language: str
-    limit_cancel: threading.Event = field(default_factory=threading.Event)
+    limit_cancel: threading.Event = field(default_factory=threading.Event)   # encerra o guardrail
+    limit_extend: threading.Event = field(default_factory=threading.Event)   # usuário pediu "continuar"
+
+    def stop_guard(self) -> None:
+        """Encerra a thread do guardrail (parada manual/shutdown), acordando qualquer espera."""
+        self.limit_cancel.set()
+        self.limit_extend.set()
 
 
 class MeetingPipeline:
@@ -115,7 +121,7 @@ class MeetingPipeline:
                 raise RuntimeError("Nenhuma reunião em andamento.")
             self._active = None
 
-        active.limit_cancel.set()   # encerra a thread do guardrail
+        active.stop_guard()   # encerra a thread do guardrail
         self.db.set_status(active.meeting_id, dbmod.STATUS_TRANSCRIBING)
         self.hub.publish(active.meeting_id, {"type": "status", "status": dbmod.STATUS_TRANSCRIBING})
 
@@ -141,16 +147,32 @@ class MeetingPipeline:
         ).start()
 
     def _limit_guard(self, active: _Active, limit: int, warn: int) -> None:
+        """A cada `limit` s: avisa `warn` s antes do fim; se o usuário não pedir para
+        continuar, encerra. Continuar renova por mais `limit` s e o ciclo se repete
+        (aviso de novo, e encerra se ninguém responder) — nunca grava para sempre."""
         mid = active.meeting_id
         deadline = active.started_at + limit
-        # Event.wait -> True quando cancelado (usuário estendeu ou parou antes).
-        if active.limit_cancel.wait(max(0.0, deadline - warn - time.time())):
-            return
-        left = max(0, int(round(deadline - time.time())))
-        self.hub.publish(mid, {"type": "limit_warning", "seconds_left": left, "deadline": deadline})
-        self._beep(3)
-        if active.limit_cancel.wait(max(0.0, deadline - time.time())):
-            return
+        while True:
+            # Event.wait -> True quando acordado (parada manual ou "continuar").
+            if active.limit_extend.wait(max(0.0, deadline - warn - time.time())):
+                if active.limit_cancel.is_set():
+                    return
+                active.limit_extend.clear()          # estendeu antes do aviso
+                deadline += limit
+                self.hub.publish(mid, {"type": "limit_extended", "minutes": limit // 60, "deadline": deadline})
+                continue
+            left = max(0, int(round(deadline - time.time())))
+            self.hub.publish(mid, {"type": "limit_warning", "seconds_left": left, "deadline": deadline})
+            self._beep(3)
+            if active.limit_extend.wait(max(0.0, deadline - time.time())):
+                if active.limit_cancel.is_set():
+                    return
+                active.limit_extend.clear()
+                deadline += limit
+                log.info("reunião %s: usuário continuou; novo limite em %d min", mid, limit // 60)
+                self.hub.publish(mid, {"type": "limit_extended", "minutes": limit // 60, "deadline": deadline})
+                continue
+            break
         log.warning("reunião %s atingiu o limite de %d min; encerrando", mid, limit // 60)
         self.hub.publish(mid, {"type": "limit_reached", "minutes": limit // 60})
         self._beep(1, long=True)
@@ -161,15 +183,12 @@ class MeetingPipeline:
                 pass
 
     def cancel_auto_stop(self, meeting_id: str) -> None:
-        """Usuário optou por continuar: o corte automático desta reunião é desligado."""
+        """Usuário optou por continuar: renova o limite por mais um período (o aviso
+        volta ao fim dele e a gravação é encerrada se ninguém responder)."""
         active = self._active
         if active is None or active.meeting_id != meeting_id:
             raise RuntimeError("Essa reunião não está ativa.")
-        if active.limit_cancel.is_set():
-            return
-        active.limit_cancel.set()
-        self.hub.publish(meeting_id, {"type": "limit_cancelled"})
-        log.info("reunião %s: corte automático cancelado pelo usuário", meeting_id)
+        active.limit_extend.set()
 
     def _beep(self, times: int, long: bool = False) -> None:
         if not self.cfg.guardrails.beep:
@@ -475,7 +494,7 @@ class MeetingPipeline:
             self._active = None
         if active is None:
             return
-        active.limit_cancel.set()
+        active.stop_guard()
         log.info("shutdown: encerrando captura da reunião %s", active.meeting_id)
         try:
             active.capture.stop()

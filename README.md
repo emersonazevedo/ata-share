@@ -76,6 +76,8 @@ extraia numa pasta (ex.: `C:\ata`).
 3. **Parar** → a ata é gerada em segundo plano e a pasta da reunião abre.
 4. Para refazer com mais precisão: botão **Reprocessar**.
 
+**Limite de gravação:** a cada 25 minutos o app avisa (popup + bip) 60 s antes de encerrar. Clique em **Continuar gravando** para renovar por mais 25 min; ao fim de cada período ele avisa de novo e, se ninguém responder, **encerra sozinho** (para não gravar para sempre). Ajuste em `[guardrails]` no `config.toml` (`max_recording_minutes`, `0` = sem limite).
+
 Dica: use **fones de ouvido**. Com alto-falante, o microfone capta o áudio da
 call e duplica falas (o app tenta remover esse eco, mas fones são melhor).
 
